@@ -113,10 +113,8 @@
 
 <div class="tabs">
   <button class="tab active"  onclick="switchTab('calc')">Tryckfall</button>
-  <button class="tab inactive" onclick="switchTab('mindim')">Minsta dim.</button>
   <button class="tab inactive" onclick="switchTab('sprinkler')">Sprinklerhuvud</button>
   <button class="tab inactive" onclick="switchTab('table')">Alla dim.</button>
-  <button class="tab inactive" onclick="switchTab('pipes')">Rörtabell</button>
   <button class="tab inactive" onclick="switchTab('info')">Om</button>
 </div>
 
@@ -137,27 +135,6 @@
   <div class="leq-summary" id="leqSummary"></div>
   <div class="results-grid" id="resultsGrid"></div>
   <div id="warnBox"></div>
-</div>
-
-<!-- MINSTA DIMENSION -->
-<div id="tab-mindim" style="display:none">
-  <div class="card">
-    <div class="section-title">Indata — Minsta dimension</div>
-    <div class="input-grid">
-      <div class="input-group"><label>Rörtyp</label><select id="selPipeType2" onchange="calcMinDim()"></select><div class="hint" id="hintC2"></div></div>
-      <div class="input-group"><label>Flöde (l/min)</label><input type="number" id="inpFlow2" value="90" oninput="calcMinDim()"></div>
-      <div class="input-group"><label>Max hastighet (m/s)</label><input type="number" id="inpVmax2" value="6" step="0.1" oninput="calcMinDim()"><div class="vmax-presets"><button class="preset-btn" onclick="setVmax2(6)">6 ventil</button><button class="preset-btn" onclick="setVmax2(10)">10 max</button></div></div>
-      <div class="input-group"><label>Rörlängd (m)</label><input type="number" id="inpLength2" value="10" oninput="calcMinDim()"></div>
-      <div class="input-group"><label>Antal böjar (90°)</label><input type="number" id="inpBends2" value="0" min="0" step="1" oninput="calcMinDim()"></div>
-      <div class="input-group"><label>Antal T-rör</label><input type="number" id="inpTees2" value="0" min="0" step="1" oninput="calcMinDim()"></div>
-    </div>
-  </div>
-  <div id="minDimResult"></div>
-  <div class="card" style="padding:0;overflow:hidden;">
-    <table><thead><tr><th style="text-align:left">DN</th><th>di (mm)</th><th>v (m/s)</th><th>Qmax vid vmax</th><th>Pf (bar)</th><th>Status</th></tr></thead>
-    <tbody id="minDimTable"></tbody></table>
-    <div class="table-footer" id="minDimFooter"></div>
-  </div>
 </div>
 
 <!-- SPRINKLERHUVUD -->
@@ -218,15 +195,6 @@
     <table><thead><tr><th style="text-align:left">DN</th><th>di (mm)</th><th>Pf (bar)</th><th>v (m/s)</th><th id="qmaxHeader">Qmax vid vmax</th></tr></thead>
     <tbody id="allTableBody"></tbody></table>
     <div class="table-footer" id="tableFooter"></div>
-  </div>
-</div>
-
-<!-- RÖRTABELL -->
-<div id="tab-pipes" style="display:none">
-  <div class="card" style="padding:0;overflow:hidden;">
-    <table><thead><tr><th style="text-align:left">Rörtyp</th><th style="text-align:right">DN</th><th style="text-align:right">di (mm)</th><th style="text-align:right">C-faktor</th><th style="text-align:left;padding-left:12px">Standard</th></tr></thead>
-    <tbody id="pipesTableBody"></tbody></table>
-    <div class="table-footer" id="pipesFooter">Hämtar data...</div>
   </div>
 </div>
 
@@ -342,17 +310,13 @@ async function loadData(){
   } else {
     setStatus('ok',`✓ ${allPipes.length} dimensioner inlästa från ${dataSource}`);
   }
-  populateSelectors();populatePipesTable();
+  populateSelectors();
 }
 
 function populateSelectors(){
-  ['selPipeType','selPipeType2'].forEach(id=>{
-    const sel=document.getElementById(id);sel.innerHTML='';
-    Object.keys(pipeDB).forEach(t=>{const o=document.createElement('option');o.value=t;o.textContent=t;sel.appendChild(o);});
-  });
+  const sel=document.getElementById('selPipeType');sel.innerHTML='';
+  Object.keys(pipeDB).forEach(t=>{const o=document.createElement('option');o.value=t;o.textContent=t;sel.appendChild(o);});
   onPipeTypeChange();
-  document.getElementById('hintC2').textContent=`C-faktor: ${(pipeDB[Object.keys(pipeDB)[0]]||[])[0]?.c}`;
-  calcMinDim();
 }
 
 function populatePipesTable(){
@@ -548,16 +512,11 @@ function selectDN(dn){document.getElementById('selDN').value=dn;onDNChange();}
 
 function switchTab(tab){
   currentTab=tab;
-  ['calc','mindim','sprinkler','table','pipes','info'].forEach(t=>{document.getElementById('tab-'+t).style.display=t===tab?'':'none';});
-  document.querySelectorAll('.tab').forEach((el,i)=>{el.className='tab '+(['calc','mindim','sprinkler','table','pipes','info'][i]===tab?'active':'inactive');});
+  ['calc','sprinkler','table','info'].forEach(t=>{document.getElementById('tab-'+t).style.display=t===tab?'':'none';});
+  document.querySelectorAll('.tab').forEach((el,i)=>{el.className='tab '+(['calc','sprinkler','table','info'][i]===tab?'active':'inactive');});
   if(tab==='table')updateAllTable();
-  if(tab==='mindim')calcMinDim();
   if(tab==='sprinkler'){renderSprInputs();calcMinFlow();calcECPressure();}
 }
-
-document.getElementById('selPipeType2').addEventListener('change',function(){
-  document.getElementById('hintC2').textContent=`C-faktor: ${(pipeDB[this.value]||[])[0]?.c}`;calcMinDim();
-});
 
 loadData();
 </script>
