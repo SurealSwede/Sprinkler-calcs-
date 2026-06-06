@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Andreas Surell · Hydrauliskt verktyg v1.2</title>
+<title>Andreas Surell · Hydrauliskt verktyg v1.3</title>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800&family=DM+Mono:wght@400;500&display=swap');
   * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -15,12 +15,17 @@
   .header-text .sub { font-size: 12px; color: #888; margin-top: 2px; }
   .version-badge { margin-left: auto; background: #1a2a5e; color: #FF8C00; font-size: 11px; font-weight: 700; padding: 4px 10px; border-radius: 20px; font-family: 'DM Mono', monospace; }
   .status-bar { display: flex; align-items: center; gap: 8px; padding: 8px 14px; border-radius: 8px; font-size: 12px; font-weight: 600; margin-bottom: 16px; }
+  .status-bar.loading { background: #e8f0fe; color: #1a73e8; }
   .status-bar.ok { background: #e6f4ea; color: #137333; }
+  .status-bar.warn { background: #fff3e0; color: #e65c00; }
   .dot { width: 8px; height: 8px; border-radius: 50%; background: currentColor; flex-shrink:0; }
+  .dot.pulse { animation: pulse 1.2s infinite; }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.3} }
   .tabs { display: flex; gap: 4px; margin-bottom: 16px; flex-wrap: wrap; }
   .tab { padding: 8px 18px; border-radius: 8px; border: none; cursor: pointer; font-weight: 600; font-size: 13px; font-family: 'DM Sans', sans-serif; transition: all 0.15s; }
   .tab.active { background: #FF8C00; color: #fff; box-shadow: 0 2px 8px rgba(255,140,0,0.3); }
   .tab.inactive { background: #fff; color: #555; box-shadow: 0 1px 3px rgba(0,0,0,0.08); }
+  .tab.inactive:hover { background: #fff8f0; }
   .card { background: #fff; border-radius: 12px; box-shadow: 0 2px 12px rgba(0,0,0,0.07); padding: 20px; margin-bottom: 16px; }
   .input-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 16px; }
   .input-group label { display: block; font-size: 10px; font-weight: 700; color: #888; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 5px; }
@@ -28,6 +33,7 @@
   .input-group select:focus, .input-group input:focus { outline: none; border-color: #FF8C00; }
   .hint { font-size: 11px; color: #FF8C00; margin-top: 3px; }
   .hint-blue { font-size: 11px; color: #1a73e8; margin-top: 3px; }
+  .hint2 { font-size: 11px; color: #aaa; margin-top: 3px; }
   .leq-summary { background: #f0f4ff; border: 1px solid #c5d0e8; border-radius: 8px; padding: 10px 16px; font-size: 12px; color: #1a2a5e; margin-bottom: 16px; display: flex; gap: 20px; flex-wrap: wrap; }
   .leq-item { display: flex; flex-direction: column; }
   .leq-item .leq-label { font-size: 10px; color: #888; text-transform: uppercase; letter-spacing: 0.5px; }
@@ -73,9 +79,12 @@
   .preset-btn:hover { background: #fff3e0; border-color: #FF8C00; color: #FF8C00; }
   .changelog { font-size: 12px; color: #888; line-height: 1.8; }
   .changelog strong { color: #1a2a5e; }
+  .reload-btn { padding: 4px 12px; border-radius: 20px; border: 1px solid #8bc4a0; background: #e6f4ea; font-size: 11px; font-weight: 600; color: #137333; cursor: pointer; font-family: 'DM Sans', sans-serif; margin-left: auto; }
+  .reload-btn:hover { background: #c8ecd4; }
 </style>
 </head>
 <body>
+
 <div class="header">
   <div class="accent-bar"></div>
   <div class="header-text">
@@ -83,10 +92,19 @@
     <h1>Hydrauliskt beräkningsverktyg</h1>
     <div class="sub">Tryckfall &amp; hastighet · Hazen-Williams · SBF 120 / EN 12845</div>
   </div>
-  <div class="version-badge">v1.2</div>
+  <div class="version-badge">v1.3</div>
 </div>
-<div class="status-bar ok"><div class="dot"></div><span>✓ 33 rördimensioner · Armaturdata från Tabell 23 (SBF 120)</span></div>
-<div class="sheet-link">📊 <a href="https://docs.google.com/spreadsheets/d/1-NgQdXMh_mmNMM_GpVCoz9IYQtEJjKommrLv25pMoNE/edit" target="_blank">Öppna Google Sheets för att redigera rördata</a></div>
+
+<div class="status-bar loading" id="statusBar">
+  <div class="dot pulse" id="statusDot"></div>
+  <span id="statusText">Hämtar rördata från Google Sheets...</span>
+  <button class="reload-btn" onclick="loadData()" style="display:none" id="reloadBtn">↺ Ladda om</button>
+</div>
+
+<div class="sheet-link">
+  📊 <a href="https://docs.google.com/spreadsheets/d/1-NgQdXMh_mmNMM_GpVCoz9IYQtEJjKommrLv25pMoNE/edit" target="_blank">Öppna Google Sheets för att redigera rördata</a>
+</div>
+
 <div class="tabs">
   <button class="tab active" onclick="switchTab('calc')">Beräkning</button>
   <button class="tab inactive" onclick="switchTab('mindim')">Minsta dimension</button>
@@ -94,6 +112,7 @@
   <button class="tab inactive" onclick="switchTab('pipes')">Rörtabell</button>
   <button class="tab inactive" onclick="switchTab('info')">Om verktyget</button>
 </div>
+
 <div id="tab-calc">
   <div class="card">
     <div class="section-title">Indata</div>
@@ -111,6 +130,7 @@
   <div class="results-grid" id="resultsGrid"></div>
   <div id="warnBox"></div>
 </div>
+
 <div id="tab-mindim" style="display:none">
   <div class="card">
     <div class="section-title">Indata — Minsta dimension</div>
@@ -130,6 +150,7 @@
     <div class="table-footer" id="minDimFooter"></div>
   </div>
 </div>
+
 <div id="tab-table" style="display:none">
   <div class="card" style="padding:0;overflow:hidden;">
     <table><thead><tr><th style="text-align:left">DN</th><th>di (mm)</th><th>Pf (bar)</th><th>v (m/s)</th><th id="qmaxHeader">Qmax vid vmax</th></tr></thead>
@@ -137,71 +158,202 @@
     <div class="table-footer" id="tableFooter"></div>
   </div>
 </div>
+
 <div id="tab-pipes" style="display:none">
   <div class="card" style="padding:0;overflow:hidden;">
     <table><thead><tr><th style="text-align:left">Rörtyp</th><th style="text-align:right">DN</th><th style="text-align:right">di (mm)</th><th style="text-align:right">C-faktor</th><th style="text-align:left;padding-left:12px">Standard</th></tr></thead>
     <tbody id="pipesTableBody"></tbody></table>
-    <div class="table-footer">Källa: Google Sheets · Calc_input / Rordata</div>
+    <div class="table-footer" id="pipesFooter">Hämtar data...</div>
   </div>
 </div>
+
 <div id="tab-info" style="display:none">
   <div class="card">
     <div class="section-title">Om verktyget</div>
     <div class="changelog">
-      <p><strong>Version 1.2</strong> — Juni 2026</p>
-      <p>· Ekvivalent rörlängd ersatt med antal böjar och T-rör</p>
-      <p>· Armaturdata automatiskt hämtad från Tabell 23 (SBF 120, C=120)</p>
+      <p><strong>Version 1.3</strong> — Juni 2026</p>
+      <p>· Live-datahämtning från Google Sheets via GitHub Pages</p>
+      <p>· Fallback till inbyggd data vid nätverksfel</p>
       <br>
+      <p><strong>Version 1.2</strong> — Juni 2026 · Antal böjar och T-rör ersätter ekvivalent rörlängd</p>
       <p><strong>Version 1.1</strong> — Juni 2026 · Startvärde max hastighet 6 m/s</p>
       <p><strong>Version 1.0</strong> — Juni 2026 · Grundläggande beräkningsmoduler</p>
       <br>
       <p><strong>Normer:</strong> SBF 120, EN 12845 · <strong>Formel:</strong> Hazen-Williams</p>
+      <p><strong>Datakälla:</strong> Google Sheets (live) med inbyggd fallback</p>
       <br>
       <p><strong>Planerade moduler:</strong></p>
       <p>· Sprinklerhuvud (Q = k√p)</p>
       <p>· Verkningsyta per riskklass</p>
-      <p>· Fler armaturtyper (backventil, butterfly m.fl.)</p>
+      <p>· Fler armaturtyper</p>
       <br>
       <p style="color:#bbb">© Andreas Surell · Sprinkler Engineering</p>
     </div>
   </div>
 </div>
+
 <script>
-const FITTINGS={15:{bend:0.50,tee:0.80},20:{bend:0.76,tee:1.30},25:{bend:0.77,tee:1.50},32:{bend:1.00,tee:2.10},40:{bend:1.20,tee:2.40},50:{bend:1.50,tee:2.90},65:{bend:1.90,tee:3.80},100:{bend:3.00,tee:6.10},150:{bend:4.30,tee:8.60},200:{bend:5.70,tee:11.0},250:{bend:7.40,tee:14.0},300:{bend:9.00,tee:17.0}};
-const RAW_DATA=[
-  {type:"Handelstub",dn:25,di:28.5,c:120,std:"EN 10217-1"},{type:"Handelstub",dn:32,di:37.2,c:120,std:"EN 10217-1"},
-  {type:"Handelstub",dn:40,di:43.1,c:120,std:"EN 10217-1"},{type:"Handelstub",dn:50,di:54.5,c:120,std:"EN 10217-1"},
-  {type:"Handelstub",dn:65,di:70.3,c:120,std:"EN 10217-1"},{type:"Handelstub",dn:100,di:107.1,c:120,std:"EN 10217-1"},
-  {type:"Handelstub",dn:150,di:159.3,c:120,std:"EN 10217-1"},{type:"Handelstub",dn:200,di:206.5,c:120,std:"EN 10217-1"},
-  {type:"Handelstub",dn:250,di:260.4,c:120,std:"EN 10217-1"},{type:"Handelstub",dn:300,di:309.7,c:120,std:"EN 10217-1"},
-  {type:"Lättviktsrör",dn:32,di:38.4,c:130,std:"EN 10217-1"},{type:"Lättviktsrör",dn:40,di:44.3,c:130,std:"EN 10217-1"},
-  {type:"Lättviktsrör",dn:50,di:56.3,c:130,std:"EN 10217-1"},{type:"Lättviktsrör",dn:65,di:72.1,c:130,std:"EN 10217-1"},
-  {type:"Lättviktsrör",dn:100,di:109.7,c:130,std:"EN 10217-1"},{type:"Lättviktsrör",dn:150,di:162.5,c:130,std:"EN 10217-1"},
+const SHEET_ID = '1-NgQdXMh_mmNMM_GpVCoz9IYQtEJjKommrLv25pMoNE';
+
+// Fallback data om Sheets inte går att nå
+const FALLBACK_DATA = [
+  {type:"Handelstub",dn:25,di:28.5,c:120,std:"EN 10217-1"},
+  {type:"Handelstub",dn:32,di:37.2,c:120,std:"EN 10217-1"},
+  {type:"Handelstub",dn:40,di:43.1,c:120,std:"EN 10217-1"},
+  {type:"Handelstub",dn:50,di:54.5,c:120,std:"EN 10217-1"},
+  {type:"Handelstub",dn:65,di:70.3,c:120,std:"EN 10217-1"},
+  {type:"Handelstub",dn:100,di:107.1,c:120,std:"EN 10217-1"},
+  {type:"Handelstub",dn:150,di:159.3,c:120,std:"EN 10217-1"},
+  {type:"Handelstub",dn:200,di:206.5,c:120,std:"EN 10217-1"},
+  {type:"Handelstub",dn:250,di:260.4,c:120,std:"EN 10217-1"},
+  {type:"Handelstub",dn:300,di:309.7,c:120,std:"EN 10217-1"},
+  {type:"Lättviktsrör",dn:32,di:38.4,c:130,std:"EN 10217-1"},
+  {type:"Lättviktsrör",dn:40,di:44.3,c:130,std:"EN 10217-1"},
+  {type:"Lättviktsrör",dn:50,di:56.3,c:130,std:"EN 10217-1"},
+  {type:"Lättviktsrör",dn:65,di:72.1,c:130,std:"EN 10217-1"},
+  {type:"Lättviktsrör",dn:100,di:109.7,c:130,std:"EN 10217-1"},
+  {type:"Lättviktsrör",dn:150,di:162.5,c:130,std:"EN 10217-1"},
   {type:"Lättviktsrör",dn:200,di:211.9,c:130,std:"EN 10217-1"},
-  {type:"Gängrör",dn:15,di:16.0,c:120,std:"SS-EN 10255"},{type:"Gängrör",dn:20,di:21.6,c:120,std:"SS-EN 10255"},
-  {type:"Gängrör",dn:25,di:27.3,c:120,std:"SS-EN 10255"},{type:"Gängrör",dn:32,di:36.0,c:120,std:"SS-EN 10255"},
-  {type:"Gängrör",dn:40,di:41.8,c:120,std:"SS-EN 10255"},{type:"Gängrör",dn:50,di:53.0,c:120,std:"SS-EN 10255"},
-  {type:"Gängrör",dn:65,di:68.8,c:120,std:"SS-EN 10255"},{type:"Gängrör",dn:100,di:105.3,c:120,std:"SS-EN 10255"},
-  {type:"Rostfria STH100",dn:50,di:56.3,c:140,std:"EN 1.4404"},{type:"Rostfria STH100",dn:65,di:72.1,c:140,std:"EN 1.4404"},
-  {type:"Rostfria STH100",dn:100,di:110.3,c:140,std:"EN 1.4404"},{type:"Rostfria STH100",dn:150,di:164.3,c:140,std:"EN 1.4404"},
-  {type:"Rostfria STH100",dn:200,di:213.1,c:140,std:"EN 1.4404"},{type:"Rostfria STH100",dn:250,di:267.0,c:140,std:"EN 1.4404"},
+  {type:"Gängrör",dn:15,di:16.0,c:120,std:"SS-EN 10255"},
+  {type:"Gängrör",dn:20,di:21.6,c:120,std:"SS-EN 10255"},
+  {type:"Gängrör",dn:25,di:27.3,c:120,std:"SS-EN 10255"},
+  {type:"Gängrör",dn:32,di:36.0,c:120,std:"SS-EN 10255"},
+  {type:"Gängrör",dn:40,di:41.8,c:120,std:"SS-EN 10255"},
+  {type:"Gängrör",dn:50,di:53.0,c:120,std:"SS-EN 10255"},
+  {type:"Gängrör",dn:65,di:68.8,c:120,std:"SS-EN 10255"},
+  {type:"Gängrör",dn:100,di:105.3,c:120,std:"SS-EN 10255"},
+  {type:"Rostfria STH100",dn:50,di:56.3,c:140,std:"EN 1.4404"},
+  {type:"Rostfria STH100",dn:65,di:72.1,c:140,std:"EN 1.4404"},
+  {type:"Rostfria STH100",dn:100,di:110.3,c:140,std:"EN 1.4404"},
+  {type:"Rostfria STH100",dn:150,di:164.3,c:140,std:"EN 1.4404"},
+  {type:"Rostfria STH100",dn:200,di:213.1,c:140,std:"EN 1.4404"},
+  {type:"Rostfria STH100",dn:250,di:267.0,c:140,std:"EN 1.4404"},
   {type:"Rostfria STH100",dn:300,di:317.9,c:140,std:"EN 1.4404"},
 ];
-const pipeDB={};
-RAW_DATA.forEach(r=>{if(!pipeDB[r.type])pipeDB[r.type]=[];pipeDB[r.type].push(r);});
-let currentTab='calc';
-['selPipeType','selPipeType2'].forEach(id=>{const sel=document.getElementById(id);Object.keys(pipeDB).forEach(t=>{const o=document.createElement('option');o.value=t;o.textContent=t;sel.appendChild(o);});});
-document.getElementById('pipesTableBody').innerHTML=RAW_DATA.map((p,i)=>`<tr style="background:${i%2===0?'#f9fafc':'#fff'}"><td>${p.type}</td><td style="text-align:right">DN ${p.dn}</td><td style="text-align:right">${p.di}</td><td style="text-align:right">${p.c}</td><td style="text-align:left;padding-left:12px">${p.std}</td></tr>`).join('');
+
+const FITTINGS={15:{bend:0.50,tee:0.80},20:{bend:0.76,tee:1.30},25:{bend:0.77,tee:1.50},32:{bend:1.00,tee:2.10},40:{bend:1.20,tee:2.40},50:{bend:1.50,tee:2.90},65:{bend:1.90,tee:3.80},100:{bend:3.00,tee:6.10},150:{bend:4.30,tee:8.60},200:{bend:5.70,tee:11.0},250:{bend:7.40,tee:14.0},300:{bend:9.00,tee:17.0}};
+
+let pipeDB = {}, allPipes = [], currentTab = 'calc', dataSource = '';
+
+function setStatus(type, msg, showReload=false) {
+  const bar=document.getElementById('statusBar');
+  bar.className='status-bar '+type;
+  const dot=bar.querySelector('.dot');
+  dot.className='dot'+(type==='loading'?' pulse':'');
+  document.getElementById('statusText').textContent=msg;
+  document.getElementById('reloadBtn').style.display=showReload?'':'none';
+}
+
+function splitCSVLine(line) {
+  const result=[]; let cur='', inQ=false;
+  for(let i=0;i<line.length;i++){
+    const c=line[i];
+    if(c==='"')inQ=!inQ;
+    else if(c===','&&!inQ){result.push(cur);cur='';}
+    else cur+=c;
+  }
+  result.push(cur);
+  return result.map(v=>v.replace(/^"|"$/g,'').trim());
+}
+
+function parseCSV(text) {
+  const lines=text.trim().split('\n');
+  if(lines.length<2)return[];
+  const headers=splitCSVLine(lines[0]);
+  return lines.slice(1).map(line=>{
+    const vals=splitCSVLine(line);
+    const obj={};
+    headers.forEach((h,i)=>{obj[h]=(vals[i]||'').trim();});
+    return obj;
+  }).filter(r=>Object.values(r).some(v=>v));
+}
+
+function buildPipeDB(rows) {
+  pipeDB={}; allPipes=[];
+  rows.forEach(r=>{
+    const type=r['Rörtyp']||r['Rortyp']||'';
+    const dn=parseFloat(r['DN']||'');
+    const di=parseFloat(r['di_mm']||r['di']||'');
+    const c=parseFloat(r['C_faktor']||r['C-faktor']||'');
+    const std=r['Standard']||'';
+    if(!type||isNaN(dn)||isNaN(di))return;
+    if(!pipeDB[type])pipeDB[type]=[];
+    const entry={dn,di,c:isNaN(c)?120:c,std};
+    pipeDB[type].push(entry);
+    allPipes.push({type,...entry});
+  });
+}
+
+async function loadData() {
+  setStatus('loading','Hämtar rördata från Google Sheets...');
+  const candidates=['Rordata','Rördata','Sheet1','Blad1'];
+  let loaded=false;
+
+  for(const sheet of candidates){
+    try{
+      const url=`https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(sheet)}`;
+      const res=await fetch(url);
+      if(!res.ok)continue;
+      const text=await res.text();
+      if(text.includes('<!DOCTYPE')||text.includes('<html'))continue;
+      const rows=parseCSV(text);
+      if(rows.length===0)continue;
+      buildPipeDB(rows);
+      if(allPipes.length===0)continue;
+      dataSource=`Google Sheets (${sheet}) · live`;
+      loaded=true;
+      break;
+    }catch(e){continue;}
+  }
+
+  if(!loaded){
+    buildPipeDB(FALLBACK_DATA.map(r=>({'Rörtyp':r.type,'DN':r.dn,'di_mm':r.di,'C_faktor':r.c,'Standard':r.std})));
+    dataSource='Inbyggd fallback (Sheets ej nåbar)';
+    setStatus('warn',`⚠️ Sheets ej nåbar — använder inbyggd data (${allPipes.length} dimensioner)`,true);
+  } else {
+    setStatus('ok',`✓ ${allPipes.length} dimensioner inlästa från ${dataSource}`);
+  }
+
+  populateSelectors();
+  populatePipesTable();
+}
+
+function populateSelectors(){
+  ['selPipeType','selPipeType2'].forEach(id=>{
+    const sel=document.getElementById(id);
+    sel.innerHTML='';
+    Object.keys(pipeDB).forEach(t=>{const o=document.createElement('option');o.value=t;o.textContent=t;sel.appendChild(o);});
+  });
+  onPipeTypeChange();
+  document.getElementById('hintC2').textContent=`C-faktor: ${(pipeDB[Object.keys(pipeDB)[0]]||[])[0]?.c}`;
+  calcMinDim();
+}
+
+function populatePipesTable(){
+  document.getElementById('pipesTableBody').innerHTML=allPipes.map((p,i)=>
+    `<tr style="background:${i%2===0?'#f9fafc':'#fff'}">
+      <td>${p.type}</td><td style="text-align:right">DN ${p.dn}</td>
+      <td style="text-align:right">${p.di}</td><td style="text-align:right">${p.c}</td>
+      <td style="text-align:left;padding-left:12px">${p.std}</td>
+    </tr>`).join('');
+  document.getElementById('pipesFooter').textContent=`Källa: ${dataSource} · ${allPipes.length} dimensioner`;
+}
+
 function hw(Q,C,d,L){return(6.05e5*Math.pow(Q,1.85))/(Math.pow(C,1.85)*Math.pow(d,4.87))*L;}
 function vel(Q,d){return(Q/60000)/(Math.PI*Math.pow(d/2000,2));}
 function qmForV(v,d){return Math.PI*Math.pow(d/2000,2)*v*60000;}
 function setVmax(v){document.getElementById('inpVmax').value=v;calculate();}
 function setVmax2(v){document.getElementById('inpVmax2').value=v;calcMinDim();}
+
 function onPipeTypeChange(){
-  const type=document.getElementById('selPipeType').value,sizes=pipeDB[type]||[],sel=document.getElementById('selDN');
-  sel.innerHTML='';sizes.forEach(s=>{const o=document.createElement('option');o.value=s.dn;o.textContent=`DN ${s.dn}  (di ${s.di} mm)`;sel.appendChild(o);});
-  document.getElementById('hintC').textContent=`C-faktor: ${sizes[0]?.c}`;onDNChange();
+  const type=document.getElementById('selPipeType').value,sizes=pipeDB[type]||[];
+  const sel=document.getElementById('selDN');
+  sel.innerHTML='';
+  sizes.forEach(s=>{const o=document.createElement('option');o.value=s.dn;o.textContent=`DN ${s.dn}  (di ${s.di} mm)`;sel.appendChild(o);});
+  document.getElementById('hintC').textContent=`C-faktor: ${sizes[0]?.c}`;
+  onDNChange();
 }
+
 function onDNChange(){
   const type=document.getElementById('selPipeType').value,dn=parseFloat(document.getElementById('selDN').value);
   const s=(pipeDB[type]||[]).find(x=>x.dn===dn);
@@ -211,13 +363,14 @@ function onDNChange(){
   document.getElementById('hintTee').textContent=`${f.tee} m/T-rör vid DN ${dn}`;
   calculate();
 }
+
 function calculate(){
   const type=document.getElementById('selPipeType').value,dn=parseFloat(document.getElementById('selDN').value);
   const Q=parseFloat(document.getElementById('inpFlow').value)||0,L=parseFloat(document.getElementById('inpLength').value)||0;
   const bends=parseFloat(document.getElementById('inpBends').value)||0,tees=parseFloat(document.getElementById('inpTees').value)||0;
   const vmax=parseFloat(document.getElementById('inpVmax').value)||6;
   const f=FITTINGS[dn]||{bend:0,tee:0};
-  const leqBends=bends*f.bend,leqTees=tees*f.tee,leqTotal=leqBends+leqTees,Ltot=L+leqTotal;
+  const leqBends=bends*f.bend,leqTees=tees*f.tee,Ltot=L+leqBends+leqTees;
   document.getElementById('leqSummary').innerHTML=`
     <div class="leq-item"><div class="leq-label">Rörlängd</div><div class="leq-value">${L.toFixed(1)} m</div></div>
     <div class="leq-item"><div class="leq-label">${bends} böjar × ${f.bend} m</div><div class="leq-value">+ ${leqBends.toFixed(2)} m</div></div>
@@ -238,6 +391,7 @@ function calculate(){
     :`<div class="ok-box">✓ Hastigheten (${v.toFixed(2)} m/s) är inom gränsvärdet ${vmax} m/s.</div>`;
   if(currentTab==='table')updateAllTable();
 }
+
 function calcMinDim(){
   const type=document.getElementById('selPipeType2').value,Q=parseFloat(document.getElementById('inpFlow2').value)||0;
   const vmax=parseFloat(document.getElementById('inpVmax2').value)||6,L=parseFloat(document.getElementById('inpLength2').value)||0;
@@ -246,7 +400,7 @@ function calcMinDim(){
   document.getElementById('hintC2').textContent=`C-faktor: ${sizes[0]?.c}`;
   const minSize=sizes.find(s=>vel(Q,s.di)<=vmax);
   document.getElementById('minDimResult').innerHTML=minSize?(()=>{
-    const f=FITTINGS[minSize.dn]||{bend:0,tee:0},leq=(bends*f.bend)+(tees*f.tee),Ltot=L+leq;
+    const f=FITTINGS[minSize.dn]||{bend:0,tee:0},Ltot=L+(bends*f.bend)+(tees*f.tee);
     const Pf=Ltot?hw(Q,minSize.c,minSize.di,Ltot):null;
     return `<div class="min-dim-box">
       <div><div class="label">Minsta godkänd dimension</div><div class="value">DN ${minSize.dn}</div>
@@ -258,7 +412,7 @@ function calcMinDim(){
     </div>`;
   })():`<div class="warning-box">⚠️ Ingen dimension i ${type} klarar ${vmax} m/s vid ${Q} l/min.</div>`;
   document.getElementById('minDimTable').innerHTML=sizes.map((s,i)=>{
-    const f=FITTINGS[s.dn]||{bend:0,tee:0},leq=(bends*f.bend)+(tees*f.tee),Ltot=L+leq;
+    const f=FITTINGS[s.dn]||{bend:0,tee:0},Ltot=L+(bends*f.bend)+(tees*f.tee);
     const v=vel(Q,s.di),ok=v<=vmax,isMin=minSize&&s.dn===minSize.dn;
     const Pf=Ltot?hw(Q,s.c,s.di,Ltot):null;
     return `<tr class="${isMin?'selected':ok?'min-ok':''}" style="background:${!isMin&&!ok&&i%2===0?'#f9fafc':''}">
@@ -268,6 +422,7 @@ function calcMinDim(){
   }).join('');
   document.getElementById('minDimFooter').textContent=`Flöde: ${Q} l/min · Max hastighet: ${vmax} m/s · ${bends} böjar · ${tees} T-rör`;
 }
+
 function updateAllTable(){
   const type=document.getElementById('selPipeType').value,selDN=parseFloat(document.getElementById('selDN').value);
   const Q=parseFloat(document.getElementById('inpFlow').value)||0,vmax=parseFloat(document.getElementById('inpVmax').value)||6;
@@ -276,7 +431,7 @@ function updateAllTable(){
   const sizes=pipeDB[type]||[],c=sizes[0]?.c||120;
   document.getElementById('qmaxHeader').textContent=`Qmax v<${vmax}`;
   document.getElementById('allTableBody').innerHTML=sizes.map((s,i)=>{
-    const f=FITTINGS[s.dn]||{bend:0,tee:0},leq=(bends*f.bend)+(tees*f.tee),Ltot=L+leq;
+    const f=FITTINGS[s.dn]||{bend:0,tee:0},Ltot=L+(bends*f.bend)+(tees*f.tee);
     const Pf=hw(Q,c,s.di,Ltot),v=vel(Q,s.di),ok=v<=vmax,sel=s.dn===selDN;
     return `<tr class="${sel?'selected':''}" onclick="selectDN(${s.dn})" style="background:${!sel&&i%2===0?'#f9fafc':''}">
       <td>DN ${s.dn}</td><td>${s.di}</td><td style="font-family:'DM Mono',monospace">${Pf.toFixed(4)}</td>
@@ -284,15 +439,23 @@ function updateAllTable(){
   }).join('');
   document.getElementById('tableFooter').textContent=`Flöde: ${Q} l/min · Max v: ${vmax} m/s · ${bends} böjar · ${tees} T-rör`;
 }
+
 function selectDN(dn){document.getElementById('selDN').value=dn;onDNChange();}
+
 function switchTab(tab){
   currentTab=tab;
   ['calc','mindim','table','pipes','info'].forEach(t=>{document.getElementById('tab-'+t).style.display=t===tab?'':'none';});
   document.querySelectorAll('.tab').forEach((el,i)=>{el.className='tab '+(['calc','mindim','table','pipes','info'][i]===tab?'active':'inactive');});
-  if(tab==='table')updateAllTable();if(tab==='mindim')calcMinDim();
+  if(tab==='table')updateAllTable();
+  if(tab==='mindim')calcMinDim();
 }
-document.getElementById('selPipeType2').addEventListener('change',function(){document.getElementById('hintC2').textContent=`C-faktor: ${(pipeDB[this.value]||[])[0]?.c}`;calcMinDim();});
-onPipeTypeChange();calcMinDim();
+
+document.getElementById('selPipeType2').addEventListener('change',function(){
+  document.getElementById('hintC2').textContent=`C-faktor: ${(pipeDB[this.value]||[])[0]?.c}`;
+  calcMinDim();
+});
+
+loadData();
 </script>
 </body>
 </html>
