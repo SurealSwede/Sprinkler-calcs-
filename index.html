@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Andreas Surell · Hydrauliskt verktyg v1.2</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800&family=DM+Mono:wght@400;500&display=swap');
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'DM Sans', sans-serif; background: #f0f2f8; min-height: 100vh; padding: 20px; color: #1a2a5e; }
+  .header { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; }
+  .accent-bar { width: 6px; height: 36px; background: #FF8C00; border-radius: 3px; flex-shrink: 0; }
+  .header-text .label { font-size: 10px; font-weight: 700; color: #FF8C00; letter-spacing: 2px; text-transform: uppercase; }
+  .header-text h1 { font-size: 20px; font-weight: 800; color: #1a2a5e; }
+  .header-text .sub { font-size: 12px; color: #888; margin-top: 2px; }
+  .version-badge { margin-left: auto; background: #1a2a5e; color: #FF8C00; font-size: 11px; font-weight: 700; padding: 4px 10px; border-radius: 20px; font-family: 'DM Mono', monospace; }
+  .status-bar { display: flex; align-items: center; gap: 8px; padding: 8px 14px; border-radius: 8px; font-size: 12px; font-weight: 600; margin-bottom: 16px; }
+  .status-bar.ok { background: #e6f4ea; color: #137333; }
+  .dot { width: 8px; height: 8px; border-radius: 50%; background: currentColor; flex-shrink:0; }
+  .tabs { display: flex; gap: 4px; margin-bottom: 16px; flex-wrap: wrap; }
+  .tab { padding: 8px 18px; border-radius: 8px; border: none; cursor: pointer; font-weight: 600; font-size: 13px; font-family: 'DM Sans', sans-serif; transition: all 0.15s; }
+  .tab.active { background: #FF8C00; color: #fff; box-shadow: 0 2px 8px rgba(255,140,0,0.3); }
+  .tab.inactive { background: #fff; color: #555; box-shadow: 0 1px 3px rgba(0,0,0,0.08); }
+  .card { background: #fff; border-radius: 12px; box-shadow: 0 2px 12px rgba(0,0,0,0.07); padding: 20px; margin-bottom: 16px; }
+  .input-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 16px; }
+  .input-group label { display: block; font-size: 10px; font-weight: 700; color: #888; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 5px; }
+  .input-group select, .input-group input { width: 100%; padding: 8px 10px; border-radius: 7px; border: 1.5px solid #dde0e8; font-size: 14px; background: #f8f9fc; color: #1a2a5e; font-family: 'DM Sans', sans-serif; }
+  .input-group select:focus, .input-group input:focus { outline: none; border-color: #FF8C00; }
+  .hint { font-size: 11px; color: #FF8C00; margin-top: 3px; }
+  .hint-blue { font-size: 11px; color: #1a73e8; margin-top: 3px; }
+  .leq-summary { background: #f0f4ff; border: 1px solid #c5d0e8; border-radius: 8px; padding: 10px 16px; font-size: 12px; color: #1a2a5e; margin-bottom: 16px; display: flex; gap: 20px; flex-wrap: wrap; }
+  .leq-item { display: flex; flex-direction: column; }
+  .leq-item .leq-label { font-size: 10px; color: #888; text-transform: uppercase; letter-spacing: 0.5px; }
+  .leq-item .leq-value { font-size: 15px; font-weight: 700; font-family: 'DM Mono', monospace; color: #1a2a5e; }
+  .leq-item .leq-value.total { color: #FF8C00; }
+  .results-grid { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 16px; }
+  .result-badge { border-radius: 8px; padding: 10px 14px; min-width: 100px; text-align: center; border: 1px solid; }
+  .result-badge.normal { background: #f0f4ff; border-color: #c5d0e8; }
+  .result-badge.warn { background: #fff3e0; border-color: #FF8C00; }
+  .result-badge.good { background: #e6f4ea; border-color: #8bc4a0; }
+  .result-badge .r-label { font-size: 10px; color: #888; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px; }
+  .result-badge .r-value { font-size: 20px; font-weight: 700; font-family: 'DM Mono', monospace; }
+  .result-badge.normal .r-value { color: #1a2a5e; }
+  .result-badge.warn .r-value { color: #e65c00; }
+  .result-badge.good .r-value { color: #137333; }
+  .result-badge .r-unit { font-size: 11px; color: #888; margin-top: 2px; }
+  .warning-box { background: #fff3e0; border: 1px solid #FF8C00; border-radius: 8px; padding: 10px 16px; font-size: 13px; color: #e65c00; margin-bottom: 16px; }
+  .ok-box { background: #e6f4ea; border: 1px solid #8bc4a0; border-radius: 8px; padding: 10px 16px; font-size: 13px; color: #137333; margin-bottom: 16px; }
+  .min-dim-box { background: #1a2a5e; border-radius: 12px; padding: 16px 20px; margin-bottom: 16px; display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
+  .min-dim-box .label { font-size: 11px; font-weight: 700; color: #aab8d4; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 4px; }
+  .min-dim-box .value { font-size: 28px; font-weight: 800; color: #FF8C00; font-family: 'DM Mono', monospace; }
+  .min-dim-box .sub { font-size: 12px; color: #8899bb; margin-top: 2px; }
+  .divider { width: 1px; height: 48px; background: #2d4070; flex-shrink: 0; }
+  .sheet-link { background: #f0f4ff; border: 1px solid #c5d0e8; border-radius: 8px; padding: 8px 14px; font-size: 12px; color: #1a2a5e; margin-bottom: 16px; display:flex; align-items:center; gap:8px; }
+  .sheet-link a { color: #1a73e8; font-weight: 600; text-decoration: none; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  thead tr { background: #1a2a5e; color: #fff; }
+  thead th { padding: 10px 12px; text-align: right; font-weight: 600; font-size: 11px; }
+  thead th:first-child { text-align: left; }
+  tbody tr { cursor: pointer; }
+  tbody tr:hover { background: #fff8f0 !important; }
+  tbody tr.selected { border-left: 3px solid #FF8C00; background: #fff3e0 !important; }
+  tbody tr.min-ok { border-left: 3px solid #137333 !important; }
+  tbody tr:not(.selected):not(.min-ok) { border-left: 3px solid transparent; }
+  tbody td { padding: 9px 12px; text-align: right; border-bottom: 1px solid #f0f0f0; }
+  tbody td:first-child { text-align: left; font-weight: 700; }
+  .v-over { color: #e65c00 !important; font-weight: 700; }
+  .v-ok { color: #137333 !important; }
+  .table-footer { padding: 8px 14px; font-size: 11px; color: #aaa; border-top: 1px solid #eee; }
+  .section-title { font-size: 11px; font-weight: 700; color: #888; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 12px; }
+  .vmax-presets { display: flex; gap: 6px; margin-top: 6px; flex-wrap: wrap; }
+  .preset-btn { padding: 3px 10px; border-radius: 20px; border: 1px solid #dde0e8; background: #f8f9fc; font-size: 11px; font-weight: 600; color: #555; cursor: pointer; font-family: 'DM Sans', sans-serif; }
+  .preset-btn:hover { background: #fff3e0; border-color: #FF8C00; color: #FF8C00; }
+  .changelog { font-size: 12px; color: #888; line-height: 1.8; }
+  .changelog strong { color: #1a2a5e; }
+</style>
+</head>
+<body>
+<div class="header">
+  <div class="accent-bar"></div>
+  <div class="header-text">
+    <div class="label">Andreas Surell · Sprinkler Engineering</div>
+    <h1>Hydrauliskt beräkningsverktyg</h1>
+    <div class="sub">Tryckfall &amp; hastighet · Hazen-Williams · SBF 120 / EN 12845</div>
+  </div>
+  <div class="version-badge">v1.2</div>
+</div>
+<div class="status-bar ok"><div class="dot"></div><span>✓ 33 rördimensioner · Armaturdata från Tabell 23 (SBF 120)</span></div>
+<div class="sheet-link">📊 <a href="https://docs.google.com/spreadsheets/d/1-NgQdXMh_mmNMM_GpVCoz9IYQtEJjKommrLv25pMoNE/edit" target="_blank">Öppna Google Sheets för att redigera rördata</a></div>
+<div class="tabs">
+  <button class="tab active" onclick="switchTab('calc')">Beräkning</button>
+  <button class="tab inactive" onclick="switchTab('mindim')">Minsta dimension</button>
+  <button class="tab inactive" onclick="switchTab('table')">Alla dimensioner</button>
+  <button class="tab inactive" onclick="switchTab('pipes')">Rörtabell</button>
+  <button class="tab inactive" onclick="switchTab('info')">Om verktyget</button>
+</div>
+<div id="tab-calc">
+  <div class="card">
+    <div class="section-title">Indata</div>
+    <div class="input-grid">
+      <div class="input-group"><label>Rörtyp</label><select id="selPipeType" onchange="onPipeTypeChange()"></select><div class="hint" id="hintC"></div></div>
+      <div class="input-group"><label>Nominell dim. (DN)</label><select id="selDN" onchange="onDNChange()"></select><div class="hint" id="hintDi"></div></div>
+      <div class="input-group"><label>Flöde (l/min)</label><input type="number" id="inpFlow" value="90" oninput="calculate()"></div>
+      <div class="input-group"><label>Rörlängd (m)</label><input type="number" id="inpLength" value="10" oninput="calculate()"></div>
+      <div class="input-group"><label>Antal böjar (90°)</label><input type="number" id="inpBends" value="0" min="0" step="1" oninput="calculate()"><div class="hint-blue" id="hintBend"></div></div>
+      <div class="input-group"><label>Antal T-rör</label><input type="number" id="inpTees" value="0" min="0" step="1" oninput="calculate()"><div class="hint-blue" id="hintTee"></div></div>
+      <div class="input-group"><label>Max hastighet (m/s)</label><input type="number" id="inpVmax" value="6" step="0.1" oninput="calculate()"><div class="vmax-presets"><button class="preset-btn" onclick="setVmax(1.5)">1,5 rör</button><button class="preset-btn" onclick="setVmax(6)">6 ventil</button><button class="preset-btn" onclick="setVmax(10)">10 max</button></div></div>
+    </div>
+  </div>
+  <div class="leq-summary" id="leqSummary"></div>
+  <div class="results-grid" id="resultsGrid"></div>
+  <div id="warnBox"></div>
+</div>
+<div id="tab-mindim" style="display:none">
+  <div class="card">
+    <div class="section-title">Indata — Minsta dimension</div>
+    <div class="input-grid">
+      <div class="input-group"><label>Rörtyp</label><select id="selPipeType2" onchange="calcMinDim()"></select><div class="hint" id="hintC2"></div></div>
+      <div class="input-group"><label>Flöde (l/min)</label><input type="number" id="inpFlow2" value="90" oninput="calcMinDim()"></div>
+      <div class="input-group"><label>Max hastighet (m/s)</label><input type="number" id="inpVmax2" value="6" step="0.1" oninput="calcMinDim()"><div class="vmax-presets"><button class="preset-btn" onclick="setVmax2(1.5)">1,5 rör</button><button class="preset-btn" onclick="setVmax2(6)">6 ventil</button><button class="preset-btn" onclick="setVmax2(10)">10 max</button></div></div>
+      <div class="input-group"><label>Rörlängd (m)</label><input type="number" id="inpLength2" value="10" oninput="calcMinDim()"></div>
+      <div class="input-group"><label>Antal böjar (90°)</label><input type="number" id="inpBends2" value="0" min="0" step="1" oninput="calcMinDim()"></div>
+      <div class="input-group"><label>Antal T-rör</label><input type="number" id="inpTees2" value="0" min="0" step="1" oninput="calcMinDim()"></div>
+    </div>
+  </div>
+  <div id="minDimResult"></div>
+  <div class="card" style="padding:0;overflow:hidden;">
+    <table><thead><tr><th style="text-align:left">DN</th><th>di (mm)</th><th>v (m/s)</th><th>Qmax vid vmax</th><th>Pf (bar)</th><th>Status</th></tr></thead>
+    <tbody id="minDimTable"></tbody></table>
+    <div class="table-footer" id="minDimFooter"></div>
+  </div>
+</div>
+<div id="tab-table" style="display:none">
+  <div class="card" style="padding:0;overflow:hidden;">
+    <table><thead><tr><th style="text-align:left">DN</th><th>di (mm)</th><th>Pf (bar)</th><th>v (m/s)</th><th id="qmaxHeader">Qmax vid vmax</th></tr></thead>
+    <tbody id="allTableBody"></tbody></table>
+    <div class="table-footer" id="tableFooter"></div>
+  </div>
+</div>
+<div id="tab-pipes" style="display:none">
+  <div class="card" style="padding:0;overflow:hidden;">
+    <table><thead><tr><th style="text-align:left">Rörtyp</th><th style="text-align:right">DN</th><th style="text-align:right">di (mm)</th><th style="text-align:right">C-faktor</th><th style="text-align:left;padding-left:12px">Standard</th></tr></thead>
+    <tbody id="pipesTableBody"></tbody></table>
+    <div class="table-footer">Källa: Google Sheets · Calc_input / Rordata</div>
+  </div>
+</div>
+<div id="tab-info" style="display:none">
+  <div class="card">
+    <div class="section-title">Om verktyget</div>
+    <div class="changelog">
+      <p><strong>Version 1.2</strong> — Juni 2026</p>
+      <p>· Ekvivalent rörlängd ersatt med antal böjar och T-rör</p>
+      <p>· Armaturdata automatiskt hämtad från Tabell 23 (SBF 120, C=120)</p>
+      <br>
+      <p><strong>Version 1.1</strong> — Juni 2026 · Startvärde max hastighet 6 m/s</p>
+      <p><strong>Version 1.0</strong> — Juni 2026 · Grundläggande beräkningsmoduler</p>
+      <br>
+      <p><strong>Normer:</strong> SBF 120, EN 12845 · <strong>Formel:</strong> Hazen-Williams</p>
+      <br>
+      <p><strong>Planerade moduler:</strong></p>
+      <p>· Sprinklerhuvud (Q = k√p)</p>
+      <p>· Verkningsyta per riskklass</p>
+      <p>· Fler armaturtyper (backventil, butterfly m.fl.)</p>
+      <br>
+      <p style="color:#bbb">© Andreas Surell · Sprinkler Engineering</p>
+    </div>
+  </div>
+</div>
+<script>
+const FITTINGS={15:{bend:0.50,tee:0.80},20:{bend:0.76,tee:1.30},25:{bend:0.77,tee:1.50},32:{bend:1.00,tee:2.10},40:{bend:1.20,tee:2.40},50:{bend:1.50,tee:2.90},65:{bend:1.90,tee:3.80},100:{bend:3.00,tee:6.10},150:{bend:4.30,tee:8.60},200:{bend:5.70,tee:11.0},250:{bend:7.40,tee:14.0},300:{bend:9.00,tee:17.0}};
+const RAW_DATA=[
+  {type:"Handelstub",dn:25,di:28.5,c:120,std:"EN 10217-1"},{type:"Handelstub",dn:32,di:37.2,c:120,std:"EN 10217-1"},
+  {type:"Handelstub",dn:40,di:43.1,c:120,std:"EN 10217-1"},{type:"Handelstub",dn:50,di:54.5,c:120,std:"EN 10217-1"},
+  {type:"Handelstub",dn:65,di:70.3,c:120,std:"EN 10217-1"},{type:"Handelstub",dn:100,di:107.1,c:120,std:"EN 10217-1"},
+  {type:"Handelstub",dn:150,di:159.3,c:120,std:"EN 10217-1"},{type:"Handelstub",dn:200,di:206.5,c:120,std:"EN 10217-1"},
+  {type:"Handelstub",dn:250,di:260.4,c:120,std:"EN 10217-1"},{type:"Handelstub",dn:300,di:309.7,c:120,std:"EN 10217-1"},
+  {type:"Lättviktsrör",dn:32,di:38.4,c:130,std:"EN 10217-1"},{type:"Lättviktsrör",dn:40,di:44.3,c:130,std:"EN 10217-1"},
+  {type:"Lättviktsrör",dn:50,di:56.3,c:130,std:"EN 10217-1"},{type:"Lättviktsrör",dn:65,di:72.1,c:130,std:"EN 10217-1"},
+  {type:"Lättviktsrör",dn:100,di:109.7,c:130,std:"EN 10217-1"},{type:"Lättviktsrör",dn:150,di:162.5,c:130,std:"EN 10217-1"},
+  {type:"Lättviktsrör",dn:200,di:211.9,c:130,std:"EN 10217-1"},
+  {type:"Gängrör",dn:15,di:16.0,c:120,std:"SS-EN 10255"},{type:"Gängrör",dn:20,di:21.6,c:120,std:"SS-EN 10255"},
+  {type:"Gängrör",dn:25,di:27.3,c:120,std:"SS-EN 10255"},{type:"Gängrör",dn:32,di:36.0,c:120,std:"SS-EN 10255"},
+  {type:"Gängrör",dn:40,di:41.8,c:120,std:"SS-EN 10255"},{type:"Gängrör",dn:50,di:53.0,c:120,std:"SS-EN 10255"},
+  {type:"Gängrör",dn:65,di:68.8,c:120,std:"SS-EN 10255"},{type:"Gängrör",dn:100,di:105.3,c:120,std:"SS-EN 10255"},
+  {type:"Rostfria STH100",dn:50,di:56.3,c:140,std:"EN 1.4404"},{type:"Rostfria STH100",dn:65,di:72.1,c:140,std:"EN 1.4404"},
+  {type:"Rostfria STH100",dn:100,di:110.3,c:140,std:"EN 1.4404"},{type:"Rostfria STH100",dn:150,di:164.3,c:140,std:"EN 1.4404"},
+  {type:"Rostfria STH100",dn:200,di:213.1,c:140,std:"EN 1.4404"},{type:"Rostfria STH100",dn:250,di:267.0,c:140,std:"EN 1.4404"},
+  {type:"Rostfria STH100",dn:300,di:317.9,c:140,std:"EN 1.4404"},
+];
+const pipeDB={};
+RAW_DATA.forEach(r=>{if(!pipeDB[r.type])pipeDB[r.type]=[];pipeDB[r.type].push(r);});
+let currentTab='calc';
+['selPipeType','selPipeType2'].forEach(id=>{const sel=document.getElementById(id);Object.keys(pipeDB).forEach(t=>{const o=document.createElement('option');o.value=t;o.textContent=t;sel.appendChild(o);});});
+document.getElementById('pipesTableBody').innerHTML=RAW_DATA.map((p,i)=>`<tr style="background:${i%2===0?'#f9fafc':'#fff'}"><td>${p.type}</td><td style="text-align:right">DN ${p.dn}</td><td style="text-align:right">${p.di}</td><td style="text-align:right">${p.c}</td><td style="text-align:left;padding-left:12px">${p.std}</td></tr>`).join('');
+function hw(Q,C,d,L){return(6.05e5*Math.pow(Q,1.85))/(Math.pow(C,1.85)*Math.pow(d,4.87))*L;}
+function vel(Q,d){return(Q/60000)/(Math.PI*Math.pow(d/2000,2));}
+function qmForV(v,d){return Math.PI*Math.pow(d/2000,2)*v*60000;}
+function setVmax(v){document.getElementById('inpVmax').value=v;calculate();}
+function setVmax2(v){document.getElementById('inpVmax2').value=v;calcMinDim();}
+function onPipeTypeChange(){
+  const type=document.getElementById('selPipeType').value,sizes=pipeDB[type]||[],sel=document.getElementById('selDN');
+  sel.innerHTML='';sizes.forEach(s=>{const o=document.createElement('option');o.value=s.dn;o.textContent=`DN ${s.dn}  (di ${s.di} mm)`;sel.appendChild(o);});
+  document.getElementById('hintC').textContent=`C-faktor: ${sizes[0]?.c}`;onDNChange();
+}
+function onDNChange(){
+  const type=document.getElementById('selPipeType').value,dn=parseFloat(document.getElementById('selDN').value);
+  const s=(pipeDB[type]||[]).find(x=>x.dn===dn);
+  document.getElementById('hintDi').textContent=s?`Innerdiameter: ${s.di} mm`:'';
+  const f=FITTINGS[dn]||{bend:'?',tee:'?'};
+  document.getElementById('hintBend').textContent=`${f.bend} m/böj vid DN ${dn}`;
+  document.getElementById('hintTee').textContent=`${f.tee} m/T-rör vid DN ${dn}`;
+  calculate();
+}
+function calculate(){
+  const type=document.getElementById('selPipeType').value,dn=parseFloat(document.getElementById('selDN').value);
+  const Q=parseFloat(document.getElementById('inpFlow').value)||0,L=parseFloat(document.getElementById('inpLength').value)||0;
+  const bends=parseFloat(document.getElementById('inpBends').value)||0,tees=parseFloat(document.getElementById('inpTees').value)||0;
+  const vmax=parseFloat(document.getElementById('inpVmax').value)||6;
+  const f=FITTINGS[dn]||{bend:0,tee:0};
+  const leqBends=bends*f.bend,leqTees=tees*f.tee,leqTotal=leqBends+leqTees,Ltot=L+leqTotal;
+  document.getElementById('leqSummary').innerHTML=`
+    <div class="leq-item"><div class="leq-label">Rörlängd</div><div class="leq-value">${L.toFixed(1)} m</div></div>
+    <div class="leq-item"><div class="leq-label">${bends} böjar × ${f.bend} m</div><div class="leq-value">+ ${leqBends.toFixed(2)} m</div></div>
+    <div class="leq-item"><div class="leq-label">${tees} T-rör × ${f.tee} m</div><div class="leq-value">+ ${leqTees.toFixed(2)} m</div></div>
+    <div class="leq-item"><div class="leq-label">Totallängd</div><div class="leq-value total">${Ltot.toFixed(2)} m</div></div>`;
+  const s=(pipeDB[type]||[]).find(x=>x.dn===dn);
+  if(!s||!Q||!Ltot)return;
+  const Pf=hw(Q,s.c,s.di,Ltot),v=vel(Q,s.di),warn=v>vmax;
+  document.getElementById('resultsGrid').innerHTML=[
+    {l:'Tryckfall',v:Pf.toFixed(4),u:'bar',w:false,g:false},
+    {l:'Hastighet',v:v.toFixed(2),u:'m/s',w:warn,g:!warn},
+    {l:'Innerdia.',v:s.di,u:'mm',w:false,g:false},
+    {l:`Qmax (v<${vmax})`,v:Math.round(qmForV(vmax,s.di)),u:'l/min',w:false,g:false},
+  ].map(b=>`<div class="result-badge ${b.w?'warn':b.g?'good':'normal'}"><div class="r-label">${b.l}</div><div class="r-value">${b.v}</div><div class="r-unit">${b.u}</div></div>`).join('');
+  const minDN=(pipeDB[type]||[]).find(s=>vel(Q,s.di)<=vmax);
+  document.getElementById('warnBox').innerHTML=warn
+    ?`<div class="warning-box">⚠️ Hastigheten (${v.toFixed(2)} m/s) överstiger max ${vmax} m/s. Välj minst ${minDN?'DN '+minDN.dn:'större dimension'}.</div>`
+    :`<div class="ok-box">✓ Hastigheten (${v.toFixed(2)} m/s) är inom gränsvärdet ${vmax} m/s.</div>`;
+  if(currentTab==='table')updateAllTable();
+}
+function calcMinDim(){
+  const type=document.getElementById('selPipeType2').value,Q=parseFloat(document.getElementById('inpFlow2').value)||0;
+  const vmax=parseFloat(document.getElementById('inpVmax2').value)||6,L=parseFloat(document.getElementById('inpLength2').value)||0;
+  const bends=parseFloat(document.getElementById('inpBends2').value)||0,tees=parseFloat(document.getElementById('inpTees2').value)||0;
+  const sizes=pipeDB[type]||[];
+  document.getElementById('hintC2').textContent=`C-faktor: ${sizes[0]?.c}`;
+  const minSize=sizes.find(s=>vel(Q,s.di)<=vmax);
+  document.getElementById('minDimResult').innerHTML=minSize?(()=>{
+    const f=FITTINGS[minSize.dn]||{bend:0,tee:0},leq=(bends*f.bend)+(tees*f.tee),Ltot=L+leq;
+    const Pf=Ltot?hw(Q,minSize.c,minSize.di,Ltot):null;
+    return `<div class="min-dim-box">
+      <div><div class="label">Minsta godkänd dimension</div><div class="value">DN ${minSize.dn}</div>
+      <div class="sub">di ${minSize.di} mm · v = ${vel(Q,minSize.di).toFixed(2)} m/s${Pf?' · Pf = '+Pf.toFixed(4)+' bar':''}</div></div>
+      <div class="divider"></div>
+      <div><div class="label">Flöde</div><div class="value" style="font-size:20px">${Q}</div><div class="sub">l/min</div></div>
+      <div class="divider"></div>
+      <div><div class="label">Max hastighet</div><div class="value" style="font-size:20px">${vmax}</div><div class="sub">m/s</div></div>
+    </div>`;
+  })():`<div class="warning-box">⚠️ Ingen dimension i ${type} klarar ${vmax} m/s vid ${Q} l/min.</div>`;
+  document.getElementById('minDimTable').innerHTML=sizes.map((s,i)=>{
+    const f=FITTINGS[s.dn]||{bend:0,tee:0},leq=(bends*f.bend)+(tees*f.tee),Ltot=L+leq;
+    const v=vel(Q,s.di),ok=v<=vmax,isMin=minSize&&s.dn===minSize.dn;
+    const Pf=Ltot?hw(Q,s.c,s.di,Ltot):null;
+    return `<tr class="${isMin?'selected':ok?'min-ok':''}" style="background:${!isMin&&!ok&&i%2===0?'#f9fafc':''}">
+      <td>DN ${s.dn}</td><td>${s.di}</td><td class="${ok?'v-ok':'v-over'}">${v.toFixed(2)}</td>
+      <td>${Math.round(qmForV(vmax,s.di))}</td><td style="font-family:'DM Mono',monospace">${Pf?Pf.toFixed(4):'—'}</td>
+      <td style="font-weight:600;color:${isMin?'#FF8C00':ok?'#137333':'#e65c00'}">${isMin?'← Minsta OK':ok?'OK':'För liten'}</td></tr>`;
+  }).join('');
+  document.getElementById('minDimFooter').textContent=`Flöde: ${Q} l/min · Max hastighet: ${vmax} m/s · ${bends} böjar · ${tees} T-rör`;
+}
+function updateAllTable(){
+  const type=document.getElementById('selPipeType').value,selDN=parseFloat(document.getElementById('selDN').value);
+  const Q=parseFloat(document.getElementById('inpFlow').value)||0,vmax=parseFloat(document.getElementById('inpVmax').value)||6;
+  const L=parseFloat(document.getElementById('inpLength').value)||0;
+  const bends=parseFloat(document.getElementById('inpBends').value)||0,tees=parseFloat(document.getElementById('inpTees').value)||0;
+  const sizes=pipeDB[type]||[],c=sizes[0]?.c||120;
+  document.getElementById('qmaxHeader').textContent=`Qmax v<${vmax}`;
+  document.getElementById('allTableBody').innerHTML=sizes.map((s,i)=>{
+    const f=FITTINGS[s.dn]||{bend:0,tee:0},leq=(bends*f.bend)+(tees*f.tee),Ltot=L+leq;
+    const Pf=hw(Q,c,s.di,Ltot),v=vel(Q,s.di),ok=v<=vmax,sel=s.dn===selDN;
+    return `<tr class="${sel?'selected':''}" onclick="selectDN(${s.dn})" style="background:${!sel&&i%2===0?'#f9fafc':''}">
+      <td>DN ${s.dn}</td><td>${s.di}</td><td style="font-family:'DM Mono',monospace">${Pf.toFixed(4)}</td>
+      <td class="${ok?'v-ok':'v-over'}">${v.toFixed(2)}</td><td>${Math.round(qmForV(vmax,s.di))}</td></tr>`;
+  }).join('');
+  document.getElementById('tableFooter').textContent=`Flöde: ${Q} l/min · Max v: ${vmax} m/s · ${bends} böjar · ${tees} T-rör`;
+}
+function selectDN(dn){document.getElementById('selDN').value=dn;onDNChange();}
+function switchTab(tab){
+  currentTab=tab;
+  ['calc','mindim','table','pipes','info'].forEach(t=>{document.getElementById('tab-'+t).style.display=t===tab?'':'none';});
+  document.querySelectorAll('.tab').forEach((el,i)=>{el.className='tab '+(['calc','mindim','table','pipes','info'][i]===tab?'active':'inactive');});
+  if(tab==='table')updateAllTable();if(tab==='mindim')calcMinDim();
+}
+document.getElementById('selPipeType2').addEventListener('change',function(){document.getElementById('hintC2').textContent=`C-faktor: ${(pipeDB[this.value]||[])[0]?.c}`;calcMinDim();});
+onPipeTypeChange();calcMinDim();
+</script>
+</body>
+</html>
