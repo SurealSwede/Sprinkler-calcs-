@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Andreas Surell · Hydrauliskt verktyg v1.7</title>
+<title>Andreas Surell · Hydrauliskt verktyg v1.8</title>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800&family=DM+Mono:wght@400;500&display=swap');
   * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -120,13 +120,12 @@
     <h1>Hydrauliskt beräkningsverktyg</h1>
     <div class="sub">Hazen-Williams · Q=k√p · SBF 120 / EN 12845</div>
   </div>
-  <div class="version-badge">v1.7</div>
+  <div class="version-badge">v1.8</div>
 </div>
 
 <div class="tabs">
   <button class="tab active"  onclick="switchTab('calc')">Tryckfall</button>
   <button class="tab inactive" onclick="switchTab('sprinkler')">Sprinklerhuvud</button>
-  <button class="tab inactive" onclick="switchTab('table')">Alla dim.</button>
   <button class="tab inactive" onclick="switchTab('info')">Om</button>
 </div>
 
@@ -153,9 +152,23 @@
   <div class="leq-summary" id="leqSummary"></div>
   <div class="results-grid" id="resultsGrid"></div>
   <div id="warnBox"></div>
-</div>
 
-<!-- SPRINKLERHUVUD -->
+  <!-- ALLA DIMENSIONER — togglebar -->
+  <div style="margin-top:4px">
+    <button id="toggleTableBtn" onclick="toggleDimTable()" style="display:flex;align-items:center;gap:8px;padding:8px 14px;border-radius:8px;border:1.5px solid #dde0e8;background:#f8f9fc;font-size:12px;font-weight:600;color:#555;cursor:pointer;font-family:'DM Sans',sans-serif;width:100%;margin-bottom:8px;">
+      <span id="toggleTableArrow" style="font-size:14px;transition:transform 0.2s">▶</span>
+      Visa alla dimensioner för vald rörtyp
+    </button>
+    <div id="allDimPanel" style="display:none">
+      <div id="allDimStatus" style="font-size:12px;color:#888;background:#f0f4ff;border:1px solid #c5d0e8;border-radius:8px;padding:8px 14px;margin-bottom:8px"></div>
+      <div class="card" style="padding:0;overflow:hidden;">
+        <table><thead><tr><th style="text-align:left">DN</th><th>di (mm)</th><th>Pf (bar)</th><th>v (m/s)</th><th id="qmaxHeader">Max flöde vid vald hastighet (l/min)</th></tr></thead>
+        <tbody id="allTableBody"></tbody></table>
+        <div class="table-footer" id="tableFooter"></div>
+      </div>
+    </div>
+  </div>
+</div>
 <div id="tab-sprinkler" style="display:none">
 
   <!-- Sektion 1: Q = k√p -->
@@ -209,21 +222,14 @@
   </div>
 </div>
 
-<!-- ALLA DIMENSIONER -->
-<div id="tab-table" style="display:none">
-  <div id="allDimStatus" style="font-size:12px;color:#888;background:#f0f4ff;border:1px solid #c5d0e8;border-radius:8px;padding:8px 14px;margin-bottom:12px"></div>
-  <div class="card" style="padding:0;overflow:hidden;">
-    <table><thead><tr><th style="text-align:left">DN</th><th>di (mm)</th><th>Pf (bar)</th><th>v (m/s)</th><th id="qmaxHeader">Max flöde vid vald hastighet (l/min)</th></tr></thead>
-    <tbody id="allTableBody"></tbody></table>
-    <div class="table-footer" id="tableFooter"></div>
-  </div>
-</div>
-
 <!-- OM -->
 <div id="tab-info" style="display:none">
   <div class="card">
     <div class="section-title">Om verktyget</div>
     <div class="changelog">
+      <p><strong>Version 1.8</strong> — Juni 2026</p>
+      <p>· Alla dimensioner flyttad till Tryckfall-fliken som togglebar tabell — separat flik borttagen</p>
+      <br>
       <p><strong>Version 1.7</strong> — Juni 2026</p>
       <p>· Ansvarsfriskrivning tillagd — popup vid första besöket samt permanent footer</p>
       <br>
@@ -407,7 +413,7 @@ function calculate(){
   document.getElementById('warnBox').innerHTML=warn
     ?`<div class="warning-box">⚠️ Hastigheten (${v.toFixed(2)} m/s) överstiger max ${vmax} m/s. Välj minst ${minDN?'DN '+minDN.dn:'större dimension'}.</div>`
     :`<div class="ok-box">✓ Hastigheten (${v.toFixed(2)} m/s) är inom gränsvärdet ${vmax} m/s.</div>`;
-  if(currentTab==='table')updateAllTable();
+  if(document.getElementById('allDimPanel').style.display!=='none')updateAllTable();
 }
 
 // --- MINSTA DIMENSION ---
@@ -541,11 +547,19 @@ function updateAllTable(){
 
 function selectDN(dn){document.getElementById('selDN').value=dn;onDNChange();}
 
+function toggleDimTable(){
+  const panel=document.getElementById('allDimPanel');
+  const arrow=document.getElementById('toggleTableArrow');
+  const open=panel.style.display==='none';
+  panel.style.display=open?'':'none';
+  arrow.style.transform=open?'rotate(90deg)':'';
+  if(open)updateAllTable();
+}
+
 function switchTab(tab){
   currentTab=tab;
-  ['calc','sprinkler','table','info'].forEach(t=>{document.getElementById('tab-'+t).style.display=t===tab?'':'none';});
-  document.querySelectorAll('.tab').forEach((el,i)=>{el.className='tab '+(['calc','sprinkler','table','info'][i]===tab?'active':'inactive');});
-  if(tab==='table')updateAllTable();
+  ['calc','sprinkler','info'].forEach(t=>{document.getElementById('tab-'+t).style.display=t===tab?'':'none';});
+  document.querySelectorAll('.tab').forEach((el,i)=>{el.className='tab '+(['calc','sprinkler','info'][i]===tab?'active':'inactive');});
   if(tab==='sprinkler'){renderSprInputs();calcMinFlow();calcECPressure();}
 }
 
