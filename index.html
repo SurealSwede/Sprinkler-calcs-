@@ -677,11 +677,13 @@ loadData();
 
 function acceptDisclaimer(){
   document.getElementById('disclaimerModal').style.display='none';
-  localStorage.setItem('disclaimerAccepted','1');
+  try{localStorage.setItem('disclaimerAccepted','1');}catch(e){}
 }
-if(localStorage.getItem('disclaimerAccepted')==='1'){
-  document.getElementById('disclaimerModal').style.display='none';
-}
+try{
+  if(localStorage.getItem('disclaimerAccepted')==='1'){
+    document.getElementById('disclaimerModal').style.display='none';
+  }
+}catch(e){}
 </script>
 
 <div class="disclaimer-footer">
