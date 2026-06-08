@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Andreas Surell · Hydrauliskt verktyg v0.9</title>
+<title>trycksatt.se · Beräkningsverktyg</title>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800&family=DM+Mono:wght@400;500&display=swap');
   * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -114,9 +114,9 @@ try{if(localStorage.getItem('disclaimerAccepted')==='1'){document.addEventListen
   <div class="modal-box">
     <div class="modal-icon">⚠️</div>
     <h2>Ansvarsfriskrivning</h2>
-    <p>Detta verktyg är avsett som ett <strong>hjälpmedel vid hydrauliska beräkningar</strong> för sprinklerprojektering och bygger på Hazen-Williams-formeln samt normer enligt SBF 120 och EN 12845.</p>
+    <p>Detta verktyg är avsett som ett <strong>hjälpmedel vid överslagsberäkningar</strong> för sprinklerprojektering och bygger på Hazen-Williams-formeln samt SS-EN 12845.</p>
     <p>Användaren ansvarar själv för att <strong>kontrollera och verifiera alla resultat</strong> innan de används i projektering, dimensionering eller dokumentation.</p>
-    <p>Andreas Surell tar inget ansvar för fel, brister eller skador som kan uppstå till följd av användning av detta verktyg.</p>
+    <p>trycksatt.se tar inget ansvar för fel, brister eller skador som kan uppstå till följd av användning av detta verktyg.</p>
     <button class="modal-accept" onclick="document.getElementById('disclaimerModal').style.display='none';try{localStorage.setItem('disclaimerAccepted','1');}catch(e){}">Jag förstår och accepterar — fortsätt till verktyget</button>
   </div>
 </div>
@@ -124,9 +124,9 @@ try{if(localStorage.getItem('disclaimerAccepted')==='1'){document.addEventListen
 <div class="header">
   <div class="accent-bar"></div>
   <div class="header-text">
-    <div class="label">Andreas Surell · Sprinkler Engineering</div>
-    <h1>Hydrauliskt beräkningsverktyg</h1>
-    <div class="sub">Hazen-Williams · Q=k√p · SBF 120 / EN 12845</div>
+    <div class="label">trycksatt.se</div>
+    <h1>Beräkningsverktyg</h1>
+    <div class="sub">Hazen-Williams · Q=k√p · SS-EN 12845</div>
   </div>
   <div class="version-badge">v0.9</div>
 </div>
@@ -159,7 +159,7 @@ try{if(localStorage.getItem('disclaimerAccepted')==='1'){document.addEventListen
   <!-- ARMATURER -->
   <div class="card">
     <div class="section-title">Armaturer</div>
-    <p style="font-size:12px;color:#888;margin-bottom:12px">Ekvivalenta rörlängder hämtas från Tabell 23, SBF 120 (C=120) och omvandlas automatiskt för vald rörtyps C-faktor.</p>
+    <p style="font-size:12px;color:#888;margin-bottom:12px">Ekvivalenta rörlängder hämtas från Tabell 23, SS-EN 12845 (C=120) och omvandlas automatiskt för vald rörtyps C-faktor.</p>
     <div id="armaturRows"></div>
     <button onclick="addArmaturRow()" style="margin-top:8px;padding:7px 16px;border-radius:8px;border:1.5px dashed #dde0e8;background:transparent;font-size:12px;font-weight:600;color:#888;cursor:pointer;font-family:'DM Sans',sans-serif;width:100%;">+ Lägg till armatur</button>
     <div class="leq-summary" id="armaturSummary" style="margin-top:12px;margin-bottom:0"></div>
@@ -217,8 +217,8 @@ try{if(localStorage.getItem('disclaimerAccepted')==='1'){document.addEventListen
 
   <!-- Sektion 3: Minsta tryck EC-sprinkler -->
   <div class="card">
-    <div class="section-title">Minsta drifttryck — EC-sprinkler (utökad täckning)</div>
-    <p style="font-size:12px;color:#888;margin-bottom:14px">Beräknar minsta drifttryck vid sprinklern för att uppfylla krav på vattentäthet och täckyta. Resultatet används vid hydraulisk dimensionering av matarledning.</p>
+    <div class="section-title">Minsta tryck — EC-sprinkler (utökad täckning)</div>
+    <p style="font-size:12px;color:#888;margin-bottom:14px">Beräknar minsta drifttryck vid sprinklern för att uppfylla krav på vattentäthet och täckyta. Resultatet används för att få fram lägsta tryck vid en viss täckyta och vattentäthet.</p>
     <div class="input-grid">
       <div class="input-group">
         <label>K-faktor</label>
