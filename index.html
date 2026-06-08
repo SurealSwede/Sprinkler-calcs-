@@ -357,6 +357,8 @@ function buildArmaturDB(rows){
     armaturTypes.push(name);
   });
 }
+
+async function loadData(){
   setStatus('loading','Hämtar data från Google Sheets...');
   const candidates=['Rordata','Rördata','Sheet1','Blad1'];
   let loaded=false;
