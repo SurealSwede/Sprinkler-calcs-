@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Andreas Surell · Hydrauliskt verktyg v0.8</title>
+<title>Andreas Surell · Hydrauliskt verktyg v0.9</title>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800&family=DM+Mono:wght@400;500&display=swap');
   * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -97,6 +97,11 @@
   .modal-box .modal-accept:hover { background: #e67e00; }
   /* FOOTER */
   .disclaimer-footer { margin-top: 24px; padding: 10px 14px; background: #f8f9fc; border: 1px solid #e0e3ee; border-radius: 8px; font-size: 11px; color: #999; line-height: 1.6; text-align: center; }
+  .armatur-row { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+  .armatur-row select { flex: 1; padding: 7px 10px; border-radius: 7px; border: 1.5px solid #dde0e8; font-size: 13px; background: #f8f9fc; color: #1a2a5e; font-family: 'DM Sans', sans-serif; }
+  .armatur-row input[type=number] { width: 70px; padding: 7px 10px; border-radius: 7px; border: 1.5px solid #dde0e8; font-size: 13px; background: #f8f9fc; color: #1a2a5e; font-family: 'DM Sans', sans-serif; text-align: center; }
+  .armatur-row .leq-hint { font-size: 11px; color: #1a73e8; min-width: 80px; }
+  .armatur-row button.del { padding: 5px 10px; border-radius: 7px; border: 1px solid #f0d0d0; background: #fff5f5; color: #c0392b; font-size: 14px; cursor: pointer; font-family: 'DM Sans',sans-serif; flex-shrink:0; }
 </style>
 </head>
 <body>
@@ -120,7 +125,7 @@
     <h1>Hydrauliskt beräkningsverktyg</h1>
     <div class="sub">Hazen-Williams · Q=k√p · SBF 120 / EN 12845</div>
   </div>
-  <div class="version-badge">v0.8</div>
+  <div class="version-badge">v0.9</div>
 </div>
 
 <div class="tabs">
@@ -144,10 +149,17 @@
       <div class="input-group"><label>Nominell dim. (DN)</label><select id="selDN" onchange="onDNChange()"></select><div class="hint" id="hintDi"></div></div>
       <div class="input-group"><label>Flöde (l/min)</label><input type="number" id="inpFlow" value="90" oninput="calculate()"></div>
       <div class="input-group"><label>Rörlängd (m)</label><input type="number" id="inpLength" value="10" oninput="calculate()"></div>
-      <div class="input-group"><label>Antal böjar 90°</label><input type="number" id="inpBends" value="0" min="0" step="1" oninput="calculate()"><div class="hint-blue" id="hintBend"></div><div style="font-size:10px;color:#aaa;margin-top:2px">Ekvivalent rörlängd räknas ut automatiskt</div></div>
-      <div class="input-group"><label>Antal T-rör</label><input type="number" id="inpTees" value="0" min="0" step="1" oninput="calculate()"><div class="hint-blue" id="hintTee"></div><div style="font-size:10px;color:#aaa;margin-top:2px">Ekvivalent rörlängd räknas ut automatiskt</div></div>
       <div class="input-group"><label>Maxhastighet i röret (m/s)</label><input type="number" id="inpVmax" value="6" step="0.1" oninput="calculate()"><div class="vmax-presets"><button class="preset-btn" onclick="setVmax(6)">6 m/s (ventiler)</button><button class="preset-btn" onclick="setVmax(10)">10 m/s (rör, max)</button></div></div>
     </div>
+  </div>
+
+  <!-- ARMATURER -->
+  <div class="card">
+    <div class="section-title">Armaturer</div>
+    <p style="font-size:12px;color:#888;margin-bottom:12px">Ekvivalenta rörlängder hämtas från Tabell 23, SBF 120 (C=120) och omvandlas automatiskt för vald rörtyps C-faktor.</p>
+    <div id="armaturRows"></div>
+    <button onclick="addArmaturRow()" style="margin-top:8px;padding:7px 16px;border-radius:8px;border:1.5px dashed #dde0e8;background:transparent;font-size:12px;font-weight:600;color:#888;cursor:pointer;font-family:'DM Sans',sans-serif;width:100%;">+ Lägg till armatur</button>
+    <div class="leq-summary" id="armaturSummary" style="margin-top:12px;margin-bottom:0"></div>
   </div>
   <div class="leq-summary" id="leqSummary"></div>
   <div class="results-grid" id="resultsGrid"></div>
@@ -227,6 +239,7 @@
   <div class="card">
     <div class="section-title">Om verktyget</div>
     <div class="changelog">
+      <p><strong>v0.9</strong> — Juni 2026 · Armaturdata live från Google Sheets — rad-baserat UI med C-faktorsomvandling</p>
       <p><strong>v0.8</strong> — Juni 2026 · Alla dimensioner integrerad i Tryckfall som togglebar tabell</p>
       <p><strong>v0.7</strong> — Juni 2026 · Ansvarsfriskrivning — popup vid första besöket och permanent footer</p>
       <p><strong>v0.6</strong> — Juni 2026 · Förbättrad användarvänlighet och tydligare etiketter</p>
@@ -240,7 +253,6 @@
       <br>
       <p><strong>Planerade moduler:</strong></p>
       <p>· Verkningsyta per riskklass (OH1–HHP3)</p>
-      <p>· Fler armaturtyper</p>
       <br>
       <div class="sheet-link" style="margin-top:8px;margin-bottom:0">
         📊 <a href="https://docs.google.com/spreadsheets/d/1-NgQdXMh_mmNMM_GpVCoz9IYQtEJjKommrLv25pMoNE/edit" target="_blank">Öppna Google Sheets för att redigera rördata</a>
@@ -289,9 +301,20 @@ const FALLBACK_DATA = [
   {type:"Rostfria STH100",dn:300,di:317.9,c:140,std:"EN 1.4404"},
 ];
 
-const FITTINGS={15:{bend:0.50,tee:0.80},20:{bend:0.76,tee:1.30},25:{bend:0.77,tee:1.50},32:{bend:1.00,tee:2.10},40:{bend:1.20,tee:2.40},50:{bend:1.50,tee:2.90},65:{bend:1.90,tee:3.80},100:{bend:3.00,tee:6.10},150:{bend:4.30,tee:8.60},200:{bend:5.70,tee:11.0},250:{bend:7.40,tee:14.0},300:{bend:9.00,tee:17.0}};
+const C_FACTOR_CONV={100:0.714,110:0.85,120:1.00,130:1.16,140:1.33};
+
+let armaturDB={};  // { 'Armaturnamn': { 20: 0.76, 25: 0.77, ... } }
+let armaturTypes=[];
+
+function getLeq(armaturName, dn, c){
+  const base=armaturDB[armaturName]?.[dn];
+  if(base==null||base===null)return null;
+  const conv=C_FACTOR_CONV[c]||1.00;
+  return base*conv;
+}
 
 let pipeDB={}, allPipes=[], currentTab='calc', dataSource='', sprMode='Q';
+let armaturRows=[]; // [{type, count}]
 
 function setStatus(type,msg,showReload=false){
   const bar=document.getElementById('statusBar');
@@ -316,8 +339,22 @@ function buildPipeDB(rows){
   });
 }
 
-async function loadData(){
-  setStatus('loading','Hämtar rördata från Google Sheets...');
+function buildArmaturDB(rows){
+  armaturDB={};armaturTypes=[];
+  rows.forEach(r=>{
+    const name=r['Armatur']||'';if(!name)return;
+    if(!armaturDB[name])armaturDB[name]={};
+    ['DN20','DN25','DN32','DN40','DN50','DN65','DN80','DN100','DN150','DN200','DN250'].forEach(col=>{
+      const dn=parseInt(col.replace('DN',''));
+      const val=r[col]||'';
+      if(val&&val!=='–'&&val!=='-'&&val!==''){
+        armaturDB[name][dn]=parseFloat(val.replace(',','.'));
+      }
+    });
+    armaturTypes.push(name);
+  });
+}
+  setStatus('loading','Hämtar data från Google Sheets...');
   const candidates=['Rordata','Rördata','Sheet1','Blad1'];
   let loaded=false;
   for(const sheet of candidates){
@@ -338,7 +375,19 @@ async function loadData(){
   } else {
     setStatus('ok',`✓ ${allPipes.length} dimensioner inlästa från ${dataSource}`);
   }
+  // Hämta armaturdata
+  try{
+    const aUrl=`https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=Armatur`;
+    const aRes=await fetch(aUrl);
+    if(aRes.ok){
+      const aText=await aRes.text();
+      if(!aText.includes('<!DOCTYPE')&&!aText.includes('<html')){
+        buildArmaturDB(parseCSV(aText));
+      }
+    }
+  }catch(e){}
   populateSelectors();
+  initArmaturUI();
 }
 
 function populateSelectors(){
@@ -358,7 +407,6 @@ function hw(Q,C,d,L){return(6.05e5*Math.pow(Q,1.85))/(Math.pow(C,1.85)*Math.pow(
 function vel(Q,d){return(Q/60000)/(Math.PI*Math.pow(d/2000,2));}
 function qmForV(v,d){return Math.PI*Math.pow(d/2000,2)*v*60000;}
 function setVmax(v){document.getElementById('inpVmax').value=v;calculate();}
-function setVmax2(v){document.getElementById('inpVmax2').value=v;calcMinDim();}
 
 function badge(label,value,unit,type='normal'){
   return `<div class="result-badge ${type}"><div class="r-label">${label}</div><div class="r-value">${value}</div><div class="r-unit">${unit}</div></div>`;
@@ -375,27 +423,24 @@ function onDNChange(){
   const type=document.getElementById('selPipeType').value,dn=parseFloat(document.getElementById('selDN').value);
   const s=(pipeDB[type]||[]).find(x=>x.dn===dn);
   document.getElementById('hintDi').textContent=s?`Innerdiameter: ${s.di} mm`:'';
-  const f=FITTINGS[dn]||{bend:'?',tee:'?'};
-  document.getElementById('hintBend').textContent=`${f.bend} m/böj vid DN ${dn}`;
-  document.getElementById('hintTee').textContent=`${f.tee} m/T-rör vid DN ${dn}`;
+  renderArmaturRows();
   calculate();
 }
 
 function calculate(){
   const type=document.getElementById('selPipeType').value,dn=parseFloat(document.getElementById('selDN').value);
   const Q=parseFloat(document.getElementById('inpFlow').value)||0,L=parseFloat(document.getElementById('inpLength').value)||0;
-  const bends=parseFloat(document.getElementById('inpBends').value)||0,tees=parseFloat(document.getElementById('inpTees').value)||0;
   const vmax=parseFloat(document.getElementById('inpVmax').value)||6;
-  const f=FITTINGS[dn]||{bend:0,tee:0};
-  const lB=bends*f.bend,lT=tees*f.tee,Ltot=L+lB+lT;
+  const s=(pipeDB[type]||[]).find(x=>x.dn===dn);
+  const c=s?.c||120;
+  const Larm=getTotalArmaturLeq(dn,c);
+  const Ltot=L+Larm;
   document.getElementById('leqSummary').innerHTML=`
     <div class="leq-item"><div class="leq-label">Rörlängd</div><div class="leq-value">${L.toFixed(1)} m</div></div>
-    <div class="leq-item"><div class="leq-label">${bends} böjar × ${f.bend} m</div><div class="leq-value">+ ${lB.toFixed(2)} m</div></div>
-    <div class="leq-item"><div class="leq-label">${tees} T-rör × ${f.tee} m</div><div class="leq-value">+ ${lT.toFixed(2)} m</div></div>
+    <div class="leq-item"><div class="leq-label">Armaturer (ekv.)</div><div class="leq-value">+ ${Larm.toFixed(2)} m</div></div>
     <div class="leq-item"><div class="leq-label">Totallängd</div><div class="leq-value total">${Ltot.toFixed(2)} m</div></div>`;
-  const s=(pipeDB[type]||[]).find(x=>x.dn===dn);
   if(!s||!Q||!Ltot)return;
-  const Pf=hw(Q,s.c,s.di,Ltot),v=vel(Q,s.di),warn=v>vmax;
+  const Pf=hw(Q,c,s.di,Ltot),v=vel(Q,s.di),warn=v>vmax;
   document.getElementById('resultsGrid').innerHTML=
     badge('Tryckfall',Pf.toFixed(4),'bar')+
     badge('Hastighet',v.toFixed(2),'m/s',warn?'warn':'good')+
@@ -408,7 +453,81 @@ function calculate(){
   if(document.getElementById('allDimPanel').style.display!=='none')updateAllTable();
 }
 
-// --- MINSTA DIMENSION ---
+function initArmaturUI(){
+  armaturRows=[];
+  renderArmaturRows();
+}
+
+function addArmaturRow(){
+  const defaultType=armaturTypes[0]||'';
+  armaturRows.push({type:defaultType,count:1});
+  renderArmaturRows();
+  calculate();
+}
+
+function removeArmaturRow(i){
+  armaturRows.splice(i,1);
+  renderArmaturRows();
+  calculate();
+}
+
+function onArmaturChange(i,field,val){
+  armaturRows[i][field]=field==='count'?Math.max(0,parseInt(val)||0):val;
+  renderArmaturRows();
+  calculate();
+}
+
+function renderArmaturRows(){
+  const dn=parseFloat(document.getElementById('selDN')?.value)||0;
+  const type=document.getElementById('selPipeType')?.value||'';
+  const c=(pipeDB[type]||[])[0]?.c||120;
+  const container=document.getElementById('armaturRows');
+  if(!container)return;
+  if(armaturRows.length===0){
+    container.innerHTML='<p style="font-size:12px;color:#aaa;text-align:center;padding:8px 0">Inga armaturer tillagda</p>';
+  } else {
+    container.innerHTML=armaturRows.map((row,i)=>{
+      const leq=dn&&row.type?getLeq(row.type,dn,c):null;
+      const leqTotal=leq!=null?leq*row.count:null;
+      const opts=armaturTypes.map(t=>`<option value="${t}"${t===row.type?' selected':''}>${t}</option>`).join('');
+      return `<div class="armatur-row">
+        <select onchange="onArmaturChange(${i},'type',this.value)">${opts}</select>
+        <input type="number" value="${row.count}" min="0" step="1" onchange="onArmaturChange(${i},'count',this.value)">
+        <span class="leq-hint">${leqTotal!=null?'= '+leqTotal.toFixed(2)+' m':'ej tillgänglig'}</span>
+        <button class="del" onclick="removeArmaturRow(${i})">✕</button>
+      </div>`;
+    }).join('');
+  }
+  // Uppdatera summering
+  let totalLeq=0;
+  const summaryParts=[];
+  armaturRows.forEach(row=>{
+    const leq=dn&&row.type?getLeq(row.type,dn,c):null;
+    if(leq!=null&&row.count>0){
+      totalLeq+=leq*row.count;
+      summaryParts.push(`${row.count}× ${row.type}: ${(leq*row.count).toFixed(2)} m`);
+    }
+  });
+  const summary=document.getElementById('armaturSummary');
+  if(summary){
+    if(summaryParts.length){
+      summary.style.display='flex';
+      summary.innerHTML=summaryParts.map(s=>`<div class="leq-item"><div class="leq-value" style="font-size:12px">${s}</div></div>`).join('')+
+        `<div class="leq-item"><div class="leq-label">Total ekvivalent längd</div><div class="leq-value total">${totalLeq.toFixed(2)} m</div></div>`;
+    } else {
+      summary.style.display='none';
+    }
+  }
+}
+
+function getTotalArmaturLeq(dn, c){
+  let total=0;
+  armaturRows.forEach(row=>{
+    const leq=getLeq(row.type,dn,c);
+    if(leq!=null)total+=leq*row.count;
+  });
+  return total;
+}
 function calcMinDim(){
   const type=document.getElementById('selPipeType2').value,Q=parseFloat(document.getElementById('inpFlow2').value)||0;
   const vmax=parseFloat(document.getElementById('inpVmax2').value)||6,L=parseFloat(document.getElementById('inpLength2').value)||0;
@@ -523,18 +642,17 @@ function updateAllTable(){
   const type=document.getElementById('selPipeType').value,selDN=parseFloat(document.getElementById('selDN').value);
   const Q=parseFloat(document.getElementById('inpFlow').value)||0,vmax=parseFloat(document.getElementById('inpVmax').value)||6;
   const L=parseFloat(document.getElementById('inpLength').value)||0;
-  const bends=parseFloat(document.getElementById('inpBends').value)||0,tees=parseFloat(document.getElementById('inpTees').value)||0;
   const sizes=pipeDB[type]||[],c=sizes[0]?.c||120;
   document.getElementById('qmaxHeader').textContent=`Max flöde vid ${vmax} m/s (l/min)`;
-  document.getElementById('allDimStatus').textContent=`Visar: ${type} · Q = ${Q} l/min · Max hastighet: ${vmax} m/s · ${bends} böjar · ${tees} T-rör`;
+  document.getElementById('allDimStatus').textContent=`Visar: ${type} · Q = ${Q} l/min · Max hastighet: ${vmax} m/s · C = ${c}`;
   document.getElementById('allTableBody').innerHTML=sizes.map((s,i)=>{
-    const f=FITTINGS[s.dn]||{bend:0,tee:0},Ltot=L+(bends*f.bend)+(tees*f.tee);
+    const Larm=getTotalArmaturLeq(s.dn,c),Ltot=L+Larm;
     const Pf=hw(Q,c,s.di,Ltot),v=vel(Q,s.di),ok=v<=vmax,sel=s.dn===selDN;
     return `<tr class="${sel?'selected':''}" onclick="selectDN(${s.dn})" style="background:${!sel&&i%2===0?'#f9fafc':''}">
       <td>DN ${s.dn}</td><td>${s.di}</td><td style="font-family:'DM Mono',monospace">${Pf.toFixed(4)}</td>
       <td class="${ok?'v-ok':'v-over'}">${v.toFixed(2)}</td><td>${Math.round(qmForV(vmax,s.di))}</td></tr>`;
   }).join('');
-  document.getElementById('tableFooter').textContent=`Flöde: ${Q} l/min · Max v: ${vmax} m/s · ${bends} böjar · ${tees} T-rör`;
+  document.getElementById('tableFooter').textContent=`Flöde: ${Q} l/min · Max v: ${vmax} m/s · Armaturer: ${armaturRows.length} st`;
 }
 
 function selectDN(dn){document.getElementById('selDN').value=dn;onDNChange();}
