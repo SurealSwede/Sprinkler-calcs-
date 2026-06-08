@@ -107,6 +107,9 @@
 <body>
 
 <!-- ANSVARSFRISKRIVNING MODAL -->
+<script>
+try{if(localStorage.getItem('disclaimerAccepted')==='1'){document.addEventListener('DOMContentLoaded',function(){var m=document.getElementById('disclaimerModal');if(m)m.style.display='none';});}}catch(e){}
+</script>
 <div class="modal-overlay" id="disclaimerModal">
   <div class="modal-box">
     <div class="modal-icon">⚠️</div>
@@ -114,7 +117,7 @@
     <p>Detta verktyg är avsett som ett <strong>hjälpmedel vid hydrauliska beräkningar</strong> för sprinklerprojektering och bygger på Hazen-Williams-formeln samt normer enligt SBF 120 och EN 12845.</p>
     <p>Användaren ansvarar själv för att <strong>kontrollera och verifiera alla resultat</strong> innan de används i projektering, dimensionering eller dokumentation.</p>
     <p>Andreas Surell tar inget ansvar för fel, brister eller skador som kan uppstå till följd av användning av detta verktyg.</p>
-    <button class="modal-accept" onclick="acceptDisclaimer()">Jag förstår och accepterar — fortsätt till verktyget</button>
+    <button class="modal-accept" onclick="document.getElementById('disclaimerModal').style.display='none';try{localStorage.setItem('disclaimerAccepted','1');}catch(e){}">Jag förstår och accepterar — fortsätt till verktyget</button>
   </div>
 </div>
 
@@ -674,16 +677,6 @@ function switchTab(tab){
 }
 
 loadData();
-
-function acceptDisclaimer(){
-  document.getElementById('disclaimerModal').style.display='none';
-  try{localStorage.setItem('disclaimerAccepted','1');}catch(e){}
-}
-try{
-  if(localStorage.getItem('disclaimerAccepted')==='1'){
-    document.getElementById('disclaimerModal').style.display='none';
-  }
-}catch(e){}
 </script>
 
 <div class="disclaimer-footer">
